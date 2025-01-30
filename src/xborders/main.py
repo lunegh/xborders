@@ -515,7 +515,8 @@ class Highlight(Gtk.Window):
             
             del self.old_signals_to_disconnect[xid]
 
-        del self.borders[xid]
+            self.clear_border(xid)
+            
         self.queue_draw()
 
     def _calc_border_geometry(self, window):
