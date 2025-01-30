@@ -22,7 +22,7 @@ gi.require_version("GObject", "2.0")
 gi.require_version("GLib", "2.0")
 from gi.repository import Gtk, Gdk, Wnck, GObject, GLib
 
-VERSION = 3.5
+VERSION = 3.51
 
 INSIDE = 'inside'
 OUTSIDE = 'outside'
@@ -325,7 +325,7 @@ def notify_version():
                 return
 
         if VERSION < latest_version:
-            threading._start_new_thread(notify_about_version, (latest_version))
+            threading._start_new_thread(notify_about_version, (latest_version,)) # Second arg has to be a tuple and the comma needs to be there to make it a tuple
     except:
         subprocess.Popen(["notify-send", "--app-name=xborders", "ERROR: xborders couldn't get latest version!"])
 
@@ -433,7 +433,7 @@ class Highlight(Gtk.Window):
     def _active_window_changed_event(self, _screen, _previous_active_window):
         is_workspace_same = True
         active_window = self.wnck_screen.get_active_window()
-        if self.old_window and len(self.old_signals_to_disconnect.items()) > 0:
+        if self.old_window and self.old_window.get_xid() in self.borders and len(self.old_signals_to_disconnect.items()) > 0:
             is_workspace_same = active_window.is_on_workspace(self.old_window.get_workspace()) if active_window and self.old_window.get_workspace() else True
 
             if FADE and (is_workspace_same or not DISCARD_INACTIVE_WORKSPACE):
@@ -452,7 +452,7 @@ class Highlight(Gtk.Window):
 
         xid = active_window.get_xid() if active_window else 0
 
-        self.border_path = [0, 0, 0, 0]
+        border_path = None
         if active_window is not None and not (SMART_HIDE_BORDER and self.is_alone_in_workspace()):
             # Find if the window has a 'geometry-changed' event connected.
 
@@ -477,14 +477,12 @@ class Highlight(Gtk.Window):
 
             border_path = self._calc_border_geometry(active_window)
 
-        if xid and FADE and is_workspace_same and not self.is_alone_in_workspace():
-            self.add_border(xid, border_path)
-            self.fade_border(xid, "in")
-        elif xid and not self.is_alone_in_workspace():
-            self.add_border(xid, border_path)
-            self.draw_border(xid)
-        else:
-            self.clear_borders()
+            if FADE and is_workspace_same:
+                self.add_border(xid, border_path)
+                self.fade_border(xid, "in")
+            else:
+                self.add_border(xid, border_path)
+                self.draw_border(xid)
 
     def _active_workspace_changed_event(self, _screen, _previous_active_workspace):
         active_workspace = _screen.get_active_workspace()
@@ -517,10 +515,12 @@ class Highlight(Gtk.Window):
             
             del self.old_signals_to_disconnect[xid]
 
+        del self.borders[xid]
+        self.queue_draw()
+
     def _calc_border_geometry(self, window):
         if (window.get_state() & Wnck.WindowState.FULLSCREEN != 0):
-            self.border_path = [0, 0, 0, 0]
-            return
+            return [0, 0, 0, 0]
         # TODO(kay:) Find out why `get_geometry` works better than `get_client_window_geometry` on Gnome but for some windows it doesnt
         x, y, w, h = window.get_client_window_geometry()
 
@@ -567,10 +567,10 @@ class Highlight(Gtk.Window):
 
         for border in self.borders.values():
             if border["fade"] == "in":
-                border["alpha"] = min(border["alpha"] + FADE_IN_STEP, BORDER_A)
+                border["alpha"] = min(border["alpha"] + FADE_IN_STEP * BORDER_A, BORDER_A)
                 border["fade"] = None if border["alpha"] == BORDER_A else "in"
             elif border["fade"] == "out":
-                 border["alpha"] = max(border["alpha"] - FADE_OUT_STEP, 0)
+                 border["alpha"] = max(border["alpha"] - FADE_OUT_STEP * BORDER_A, 0)
                  border["fade"] = None if border["alpha"] == 0 else "out"
 
             fading += 1 if border["fade"] else 0
