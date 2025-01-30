@@ -22,5 +22,5 @@ If applicable, add screenshots to help explain your problem.
 **Additional context**
 Add any other context about the problem here.
 
-**Distribution and xborders version**
-Include your Linux distribution and the version of xborders you're using.
+**Environment info**
+Include your Linux distribution, window manager and xborders version.
