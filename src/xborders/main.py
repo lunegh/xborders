@@ -22,7 +22,7 @@ gi.require_version("GObject", "2.0")
 gi.require_version("GLib", "2.0")
 from gi.repository import Gtk, Gdk, Wnck, GObject, GLib
 
-VERSION = 3.51
+VERSION = 3.52
 
 INSIDE = 'inside'
 OUTSIDE = 'outside'
@@ -516,7 +516,7 @@ class Highlight(Gtk.Window):
             del self.old_signals_to_disconnect[xid]
 
             self.clear_border(xid)
-            
+
         self.queue_draw()
 
     def _calc_border_geometry(self, window):
